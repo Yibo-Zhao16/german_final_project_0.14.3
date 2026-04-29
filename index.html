@@ -6,7 +6,7 @@
 <title>YIBO ZHAO — Wuppertal, ein Traum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=PP+Editorial+New&family=Archivo:wght@400;500;700;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PP+Editorial+New&family=Archivo:wght@400;500;700;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&family=Lora:ital,wght@0,400;0,500;1,400&family=Saira+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #0a0a08;
@@ -719,6 +719,20 @@
      and gets a CSS variable --p (0..1) updated as the user scrolls. At p=0 the
      character is dim; at p=1 it's at full color. Reveal is character-by-character
      in reading order (top-down, left-to-right within each line). */
+  /* Saira Condensed applied to long German prose passages — gives them a
+     signage / public-text feel that complements the Schwebebahn theme.
+     Weight 500 (vs default 400) thickens strokes to compensate for the
+     condensed proportions reading thin. Size bumped ~15% to match the
+     visual weight of normal-proportion serif body text. The scroll-reveal
+     char-by-char animation still works (color set on .srw-char). Existing
+     emphasis font swaps inside (em → Instrument Serif italic) untouched. */
+  .srw-block {
+    font-family: 'Saira Condensed', 'Archivo', sans-serif;
+    font-weight: 500;
+    font-size: 1.22rem;
+    line-height: 1.55;
+    letter-spacing: 0.04em;
+  }
   .srw-block .srw-char {
     color: rgba(244, 241, 234, calc(0.16 + 0.84 * var(--p, 0)));
   }
@@ -870,7 +884,7 @@
   .about-body p {
     font-size: 1.08rem;
     margin-bottom: 18px;
-    max-width: 52ch;
+    max-width: 66ch;
   }
   .about-body em {
     font-family: 'Instrument Serif', Georgia, serif;
@@ -1159,7 +1173,7 @@
   }
   .hobby-de em {
     font-style: normal;
-    color: #ff6b66;
+    color: #c1272d;
   }
   .hobby-en {
     font-family: 'Archivo', sans-serif;
@@ -1174,11 +1188,12 @@
   }
   /* Quote: Lora serif italic, in the architectural-monograph body style */
   .hobby-sentence {
-    font-family: 'Lora', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
-    font-size: 1.05rem;
-    line-height: 1.6;
+    font-family: 'Saira Condensed', 'Lora', Georgia, serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1.22rem;
+    line-height: 1.55;
+    letter-spacing: 0.005em;
     color: #f4f1ea;
     opacity: 0.82;
     margin: 0;
@@ -1922,10 +1937,13 @@
   }
   .story-head em { font-style: italic; color: var(--rail); }
   .story-body p {
-    font-size: 1.08rem;
-    line-height: 1.65;
+    font-family: 'Saira Condensed', 'Archivo', sans-serif;
+    font-weight: 500;
+    font-size: 1.22rem;
+    line-height: 1.55;
+    letter-spacing: 0.005em;
     margin-bottom: 18px;
-    max-width: 55ch;
+    max-width: 70ch;
   }
   .story-body em {
     font-family: 'Instrument Serif', Georgia, serif;
@@ -1934,11 +1952,78 @@
   }
   .story-img {
     position: relative;
+    overflow: hidden;
   }
   .story-img img {
     width: 100%;
     aspect-ratio: 4/5;
     object-fit: cover;
+  }
+  /* Layered animation: when the typing on the last story paragraph
+     completes, .story-img gets the .is-reaching class. CSS transitions
+     then play SIMULTANEOUSLY:
+       - Hand cutout slides in from bottom-right (1.2s)
+       - Wall layer (concrete with hand-shaped hole) fades in beneath (1.2s)
+     The cutout and wall layer are pixel-aligned, so once both are at
+     full presence they form one unified image of "hand on wall." */
+  .story-img-base {
+    position: relative;
+    z-index: 1;
+  }
+  .story-img-wall {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .story-img.is-reaching .story-img-wall {
+    opacity: 1;
+  }
+  /* Peek-through halo: when reach animation has fully completed and the
+     user mouses over the story-img, a soft circular hole follows the
+     cursor through both the wall AND hand layers, revealing the base
+     Schwebebahn photo underneath. The hole is fully transparent at center
+     and fades to fully visible at the halo's edge. JS updates --peek-x
+     and --peek-y on .story-img to track the mouse position. */
+  .story-img.is-peeking { cursor: none; }
+  .story-img.is-peeking .story-img-wall,
+  .story-img.is-peeking .story-img-hand {
+    -webkit-mask-image: radial-gradient(
+      circle 130px at var(--peek-x, -999px) var(--peek-y, -999px),
+      transparent 0%,
+      rgba(0, 0, 0, 0.5) 60%,
+      black 100%
+    );
+            mask-image: radial-gradient(
+      circle 130px at var(--peek-x, -999px) var(--peek-y, -999px),
+      transparent 0%,
+      rgba(0, 0, 0, 0.5) 60%,
+      black 100%
+    );
+    -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+  }
+  .story-img-hand {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    /* The hand cutout is pre-aligned to its position in the original photo
+       (padded to match wall.webp's dimensions). object-fit:cover keeps it
+       at the same scale/position as the wall layer beneath. */
+    object-fit: cover;
+    object-position: center;
+    /* Initial: translated 60% right and 60% down (off-frame to the
+       bottom-right). When .is-reaching fires, transitions to 0,0. */
+    transform: translate(60%, 60%);
+    opacity: 0;
+    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.6s ease-out;
+    will-change: transform, opacity;
+  }
+  .story-img.is-reaching .story-img-hand {
+    transform: translate(0, 0);
+    opacity: 1;
   }
   .story-img-label {
     position: absolute;
@@ -2286,10 +2371,13 @@
     padding: 20px 0;
   }
   .md-text p {
-    font-size: 1.08rem;
-    line-height: 1.65;
+    font-family: 'Saira Condensed', 'Archivo', sans-serif;
+    font-weight: 500;
+    font-size: 1.25rem;
+    line-height: 1.55;
+    letter-spacing: 0.005em;
     opacity: 0.85;
-    max-width: 50ch;
+    max-width: 65ch;
   }
   .md-text em {
     font-family: 'Instrument Serif', Georgia, serif;
@@ -2474,10 +2562,13 @@
     opacity: 0.6;
   }
   .cn-text p {
-    font-size: 1.05rem;
-    line-height: 1.6;
+    font-family: 'Saira Condensed', 'Archivo', sans-serif;
+    font-weight: 500;
+    font-size: 1.22rem;
+    line-height: 1.55;
+    letter-spacing: 0.005em;
     margin-bottom: 14px;
-    max-width: 50ch;
+    max-width: 65ch;
   }
   .cn-text em {
     font-family: 'Instrument Serif', Georgia, serif;
@@ -3884,7 +3975,19 @@
 <section id="story" class="schwebe-story">
   <div class="story-grid">
     <div class="story-img" data-reveal>
-      <img src="images/IMG_20250419_184649.jpg" alt="Schwebebahn from below">
+      <img src="images/IMG_20250421_073440.jpg" alt="Wuppertal — early morning" class="story-img-base">
+      <!-- Wall layer: concrete wall with a hand-shaped transparent HOLE
+           where my hand will sit. Pixel-aligned with the hand cutout
+           below — they were exported as complementary halves of the same
+           source photo. WebP for compact alpha. Fades in after the hand
+           cutout has docked into place. -->
+      <img src="images/wall.webp" alt="" aria-hidden="true" class="story-img-wall">
+      <!-- Hand cutout: hand+arm+sleeve with transparent background. Pre-
+           padded to the wall's full dimensions so it sits at exactly the
+           position the hand was in the original photo. Slides in from
+           bottom-right; once docked, the wall layer fades in beneath and
+           the cutout fills the hole pixel-perfectly. -->
+      <img src="images/hand_and_cloth.png" alt="My hand reaching out, touching a wall in Wuppertal" class="story-img-hand">
       <div class="story-img-label">— Nr. 253 / Kaiserstraße</div>
     </div>
     <div>
@@ -3896,7 +3999,7 @@
         <p>Es war ein Buch, oder ein Bild in einer Zeitschrift — ich weiß es nicht mehr genau. Aber da war eine Stadt, mit einer <em>fliegenden</em> Bahn. Eine Bahn, die nicht auf dem Boden fuhr, sondern <em>schwebte</em>.</p>
         <p>Für ein Kind in China war es wie ein Traum. Eine Stadt, wo die Bahnen fliegen. Eine Stadt so klein und so speziell, dass sie nicht in meinem Geografie-Buch war — aber sie hatte diese <em>unmögliche</em> Sache, die keine andere Stadt hatte.</p>
         <p>Mehr als zehn Jahre lang war Wuppertal kein Ort. Es war eine Idee. <em>Ein Asyl</em> — ein ruhiges Asyl in meinem Kopf, für wenn das Leben zu laut war. Etwas Schönes, Fernes, Friedliches, das ich nicht berühren konnte.</p>
-        <p><strong>Dann, im April, habe ich sie berührt.</strong></p>
+        <p data-reach-trigger><strong>Dann, im April, habe ich sie berührt.</strong></p>
       </div>
     </div>
   </div>
@@ -4322,15 +4425,10 @@
       // Phase 1: one-shot entry trigger. Threshold low because the section is
       // 600vh tall — max possible intersection ratio is viewport_height /
       // section_height ≈ 0.16, so threshold must be below that to fire.
-      // requestAnimationFrame ensures the browser paints the off-screen state
-      // for at least one frame before .is-arrived is added — without this,
-      // the transition can be skipped if browser merges the two states.
       const io = new IntersectionObserver((entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            requestAnimationFrame(() => {
-              section.classList.add('is-arrived');
-            });
+            section.classList.add('is-arrived');
             io.disconnect();
           }
         }
@@ -4463,6 +4561,105 @@
       }
       update();
       window.addEventListener('resize', update, { passive: true });
+    })();
+
+    // ================= STORY IMAGE: HAND REACHES IN =================
+    // When the last story paragraph ("Dann, im April, habe ich sie berührt.")
+    // FINISHES typing (the terminal-style typewriter completes), the reach
+    // animation begins: hand cutout slides in from bottom-right, then the
+    // wall (full hand photo) fades in beneath the cutout.
+    //
+    // We listen for the .term-done class to be added to the trigger
+    // paragraph — that's the signal that the typing animation completed.
+    // Additionally we guard against scroll-jump (Wuppertal warp) by only
+    // arming the trigger after the user has scrolled into a state where
+    // the paragraph is below the viewport (i.e., they haven't seen it yet).
+    (function setupStoryReach() {
+      const trigger = document.querySelector('[data-reach-trigger]');
+      const storyImg = document.querySelector('.story-img');
+      if (!trigger || !storyImg) return;
+
+      let armed = false;
+      let fired = false;
+
+      function fire() {
+        if (fired) return;
+        fired = true;
+        storyImg.classList.add('is-reaching');
+        // After the reach animation completes (1.2s), enable the peek
+        // effect: mouse-following halo that reveals the Schwebebahn photo
+        // beneath the wall+hand layers.
+        setTimeout(() => {
+          enablePeek();
+        }, 1300);
+      }
+
+      function enablePeek() {
+        const cursor = document.getElementById('custom-cursor');
+
+        function onMove(e) {
+          const r = storyImg.getBoundingClientRect();
+          const x = e.clientX - r.left;
+          const y = e.clientY - r.top;
+          storyImg.style.setProperty('--peek-x', x + 'px');
+          storyImg.style.setProperty('--peek-y', y + 'px');
+        }
+        function onEnter() {
+          storyImg.classList.add('is-peeking');
+          if (cursor) cursor.style.opacity = '0';
+        }
+        function onLeave() {
+          storyImg.classList.remove('is-peeking');
+          if (cursor) cursor.style.opacity = '1';
+          // Reset mask position off-screen so no faint halo lingers
+          storyImg.style.setProperty('--peek-x', '-999px');
+          storyImg.style.setProperty('--peek-y', '-999px');
+        }
+        storyImg.addEventListener('mousemove', onMove);
+        storyImg.addEventListener('mouseenter', onEnter);
+        storyImg.addEventListener('mouseleave', onLeave);
+      }
+
+      // Watch for .term-done on the trigger paragraph. When it appears,
+      // the typing animation has completed for this paragraph.
+      const mutObs = new MutationObserver(() => {
+        if (trigger.classList.contains('term-done') && armed) {
+          fire();
+          mutObs.disconnect();
+        }
+      });
+      mutObs.observe(trigger, { attributes: true, attributeFilter: ['class'] });
+
+      // Arm the trigger only when the paragraph is below the viewport —
+      // i.e., the user is approaching it naturally via scroll. This prevents
+      // the warp-jump from instantly firing.
+      function checkArm() {
+        if (armed || fired) return;
+        const r = trigger.getBoundingClientRect();
+        const vh = window.innerHeight;
+        if (r.top > vh) {
+          armed = true;
+          // If typing already completed before arming (unlikely but safe),
+          // fire immediately on next class change. The mutObs above handles it.
+          if (trigger.classList.contains('term-done')) {
+            fire();
+            mutObs.disconnect();
+          }
+        }
+      }
+
+      let pending = false;
+      function onScroll() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+          pending = false;
+          checkArm();
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      checkArm();
     })();
 
     // ================= CUSTOM CURSOR =================
