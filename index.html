@@ -5283,21 +5283,22 @@
 
           // Fast Loki for the first pane (Wuppertal hero title) and the
           // self-intro pane ("Hallo, ich heiße Yibo"). Everything else keeps
-          // the slower, more dramatic original timing.
+          // the slower, more dramatic timing. Both tiers tuned to feel
+          // unhurried and readable rather than blink-and-miss-it.
           const isFastPane =
             e.target.matches('.hero-title') ||
             !!e.target.closest('.chapter-mark--hero');
 
-          const fastOpts = { cycles: 2, stepMs: 45, staggerMs: 22, landJitter: 120 };
+          const fastOpts = { cycles: 3, stepMs: 90, staggerMs: 40, landJitter: 200 };
           const slowOpts = {}; // use function defaults (cycles 4, stepMs 110, staggerMs 55)
 
           const opts = isFastPane ? fastOpts : slowOpts;
           runInitialGlitch(chars, opts);
 
           // start occasional re-glitches a bit after settle
-          const stagger = isFastPane ? 22 : 55;
-          const step = isFastPane ? 45 : 110;
-          const cyc = isFastPane ? 2 : 4;
+          const stagger = isFastPane ? 40 : 55;
+          const step = isFastPane ? 90 : 110;
+          const cyc = isFastPane ? 3 : 4;
           const settleTime = chars.length * stagger + cyc * step + 400;
           setTimeout(() => scheduleOccasionalGlitches(chars), settleTime + 1500);
         }
