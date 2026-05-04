@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -6,7 +7,7 @@
 <title>YIBO ZHAO — Wuppertal, ein Traum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=PP+Editorial+New&family=Archivo:wght@400;500;700;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&family=Lora:ital,wght@0,400;0,500;1,400&family=Saira+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PP+Editorial+New&family=Archivo:wght@400;500;700;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&family=Lora:ital,wght@0,400;0,500;1,400&family=Saira+Condensed:wght@400;500;600;700;800;900&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #0a0a08;
@@ -460,6 +461,36 @@
     text-shadow:
       0 2px 30px rgba(0, 0, 0, 0.6),
       0 1px 3px rgba(0, 0, 0, 0.5);
+    /* Smooth font-family swap. We can't transition font-family directly, but
+       letter-spacing CAN transition — used for visual polish during the
+       Fraktur swap (blackletter is naturally tighter, so slightly looser
+       tracking matches the serif's airy feel). */
+    transition: letter-spacing 0.4s ease-out;
+  }
+  /* Periodic Fraktur (UnifrakturMaguntia) swap — JS schedules an independent
+     timer on each [data-loki] title element, swapping to blackletter
+     occasionally for ~4s before reverting. Echoes historical German
+     typography. .en and .sub subtitles inside titles keep their original
+     styling — they're already excluded from the Loki char wrapping (see
+     LOKI_SKIP_SELECTORS in JS), and each has its OWN explicit font-family
+     rule that beats inheritance from the parent. So no extra override
+     needed; just don't let the fraktur class bleed into them. */
+  [data-loki].is-fraktur {
+    font-family: 'UnifrakturMaguntia', 'PP Editorial New', Georgia, serif !important;
+    /* Slightly tighter tracking than serifs since blackletter is naturally
+       airier per glyph. */
+    letter-spacing: -0.04em;
+  }
+  [data-loki].is-fraktur em {
+    font-style: normal;  /* fraktur has no real italic; keep upright for legibility */
+  }
+  /* Fraktur's capital letters have decorative flourishes that rise above
+     the normal cap-height. The .line wrappers (used in the hero) use
+     overflow: hidden, so we add top padding/negative-margin to give them
+     room without shifting layout. */
+  [data-loki].is-fraktur .line {
+    padding-top: 0.18em;
+    margin-top: -0.18em;
   }
   .hero-title em {
     font-style: italic;
@@ -5418,11 +5449,107 @@
           const cyc = isFastPane ? 3 : 4;
           const settleTime = chars.length * stagger + cyc * step + 400;
           setTimeout(() => scheduleOccasionalGlitches(chars), settleTime + 1500);
+
+          // Every [data-loki] title gets its own Fraktur swap loop on an
+          // independent timer — feels more chaotic and organic than
+          // synchronized swaps. The first swap fires soon after the initial
+          // Loki settle so users see the effect quickly; subsequent swaps
+          // ramp linearly from 1s holds to 3s holds over 5 cycles.
+          setTimeout(() => scheduleFrakturSwap(e.target, chars), settleTime + 500);
         }
       });
     }, { threshold: 0.1 });
 
     document.querySelectorAll('[data-loki]').forEach(el => lokiObs.observe(el));
+
+    // Run a transient glitch on every char in `chars`. At the midpoint of
+    // the glitch sequence, invoke `midCallback` — useful for swapping
+    // styles during the moment when chars are random glyphs rather than
+    // their final letters, so the visual transition feels intentional.
+    // After totalCycles, every char snaps back to its final letter.
+    function runGlitchSwap(chars, midCallback, options = {}) {
+      const { cycles = 4, stepMs = 90, staggerMs = 35 } = options;
+      const midStep = Math.floor(cycles / 2);
+      let midFired = false;
+      chars.forEach((span, i) => {
+        const final = span.dataset.final;
+        const startDelay = i * staggerMs + Math.random() * 60;
+        span.classList.add('glitching');
+        let step = 0;
+        setTimeout(() => {
+          const interval = setInterval(() => {
+            // Fire midCallback once, when about half the chars have hit
+            // mid-cycle. Tied to step count of the FIRST char.
+            if (!midFired && i === 0 && step === midStep) {
+              midFired = true;
+              if (midCallback) midCallback();
+            }
+            if (step >= cycles) {
+              clearInterval(interval);
+              span.textContent = final;
+              span.classList.remove('glitching');
+              return;
+            }
+            span.textContent = randGlyph();
+            step++;
+          }, stepMs);
+        }, startDelay);
+      });
+      // Total time until last char settles
+      return chars.length * staggerMs + cycles * stepMs + 200;
+    }
+
+    // Schedule the periodic Fraktur swap on a Loki title.
+    // Sequence per iteration:
+    //   1. Wait random 4-8s gap
+    //   2. Glitch (mid: add .is-fraktur class) — title now looks Fraktur
+    //   3. Hold for ~4s
+    //   4. Glitch (mid: remove .is-fraktur class) — back to original
+    //   5. Repeat
+    // Skips iterations when the title is offscreen so we don't waste CPU
+    // or set the class on titles the user can't see (which would flash
+    // jarringly when they scroll to it later).
+    function scheduleFrakturSwap(titleEl, chars) {
+      // Hold pattern per cycle:
+      //   Cycle 0:  1s serif → 1s fraktur → 1s serif (snappy intro)
+      //   Cycle 1+: 4s serif → 4s fraktur → 4s serif (calm cadence)
+      // Each title has its own counter, so the pattern restarts when a
+      // new section's title initializes.
+      let cycleCount = 0;
+      function currentHold() {
+        return cycleCount === 0 ? 1000 : 4000;
+      }
+      function nextCycle() {
+        const hold = currentHold();
+        // Pre-cycle gap = the serif hold time, with ±0.5s jitter so
+        // independent title timers don't accidentally synchronize and so
+        // each cycle feels organic rather than mechanical.
+        const gap = hold + (Math.random() - 0.5) * 1000;
+        setTimeout(() => {
+          // Skip if offscreen — try again later
+          if (!isInViewport(titleEl)) {
+            nextCycle();
+            return;
+          }
+          // Glitch in: at mid-cycle, swap to Fraktur
+          const settleA = runGlitchSwap(chars, () => {
+            titleEl.classList.add('is-fraktur');
+          }, { cycles: 4, stepMs: 90, staggerMs: 35 });
+          // Hold the Fraktur for `hold` ms (also jittered ±0.5s), then
+          // glitch back to serif.
+          const fHold = hold + (Math.random() - 0.5) * 1000;
+          setTimeout(() => {
+            const settleB = runGlitchSwap(chars, () => {
+              titleEl.classList.remove('is-fraktur');
+            }, { cycles: 4, stepMs: 90, staggerMs: 35 });
+            cycleCount++;
+            // Schedule the next cycle (its `gap` is the serif hold time)
+            setTimeout(nextCycle, settleB + 200);
+          }, settleA + fHold);
+        }, gap);
+      }
+      nextCycle();
+    }
 
     // ================= TERMINAL TYPING =================
     // Target selector — small/body text elements that should type out with a ">" prefix and cursor.
