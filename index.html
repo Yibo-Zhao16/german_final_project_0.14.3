@@ -5911,6 +5911,7 @@
         lastX = e.clientX;
         lastY = e.clientY;
         vx = 0; vy = 0;
+        velocitySamples = [];
         lastMoveTime = performance.now();
         viewport.setPointerCapture(e.pointerId);
         e.preventDefault();
@@ -5920,6 +5921,8 @@
       // events arrive, but only paint once per animation frame. Smoother and
       // less wasteful.
       let pendingFrame = false;
+      let velocitySamples = []; // rolling window of recent {dx, dy, dt} samples
+      const VELOCITY_WINDOW_MS = 60; // average over the last ~60ms for stable velocity
       function schedulePaint() {
         if (pendingFrame) return;
         pendingFrame = true;
@@ -5936,8 +5939,17 @@
         ty += dy;
         const now = performance.now();
         const dt = Math.max(1, now - lastMoveTime);
-        vx = dx / dt;
-        vy = dy / dt;
+        // Append this sample and drop old ones outside the velocity window.
+        // We compute release-velocity from the AVERAGE of recent motion, not
+        // just the last single move event — single-event velocity is noisy
+        // (high-Hz pointers fire many tiny moves with quantized timestamps,
+        // and a single jittery one would dominate a literal dx/dt reading).
+        velocitySamples.push({ dx, dy, dt, t: now });
+        // Drop samples older than VELOCITY_WINDOW_MS
+        while (velocitySamples.length > 0 &&
+               now - velocitySamples[0].t > VELOCITY_WINDOW_MS) {
+          velocitySamples.shift();
+        }
         lastMoveTime = now;
         lastX = e.clientX;
         lastY = e.clientY;
@@ -5948,11 +5960,42 @@
         dragging = false;
         viewport.classList.remove('is-dragging');
         try { viewport.releasePointerCapture(e.pointerId); } catch(_) {}
-        const FRICTION = 0.94;
-        const STOP_THRESHOLD = 0.05;
-        function tick() {
-          vx *= FRICTION;
-          vy *= FRICTION;
+
+        // Compute release velocity as the AVERAGE of recent samples (px per ms).
+        let totalDx = 0, totalDy = 0, totalDt = 0;
+        for (const s of velocitySamples) {
+          totalDx += s.dx;
+          totalDy += s.dy;
+          totalDt += s.dt;
+        }
+        if (totalDt > 0) {
+          vx = totalDx / totalDt;
+          vy = totalDy / totalDt;
+        } else {
+          vx = 0; vy = 0;
+        }
+        velocitySamples = [];
+
+        // Inertia: exponential decay using REAL elapsed frame-time (so the
+        // physics is identical on 60Hz, 120Hz, or stutters). The decay
+        // coefficient is expressed as "amount of velocity remaining per
+        // millisecond" — we apply it as v *= DAMP^dt_ms each frame.
+        // DAMP = 0.997 per ms gives a half-life of ~230ms — content keeps
+        // gliding for roughly 600-800ms after release, like iOS scrolling.
+        const DAMP_PER_MS = 0.997;
+        const STOP_THRESHOLD = 0.02; // px/ms — below this, snap to rest
+        let lastTickTime = performance.now();
+        function tick(now) {
+          const dt = Math.min(50, now - lastTickTime); // cap to avoid huge jumps after tab-switch
+          lastTickTime = now;
+          // Decay velocity by DAMP^dt
+          const decay = Math.pow(DAMP_PER_MS, dt);
+          vx *= decay;
+          vy *= decay;
+          // Apply velocity (px/ms × ms = px)
+          tx += vx * dt;
+          ty += vy * dt;
+          applyTransform();
           if (Math.abs(vx) < STOP_THRESHOLD && Math.abs(vy) < STOP_THRESHOLD) {
             momentumRAF = null;
             // Momentum finished — resume auto-pan after a 2.5s pause so the
@@ -5960,15 +6003,11 @@
             scheduleAutoPanResume(2500);
             return;
           }
-          tx += vx * 16;
-          ty += vy * 16;
-          applyTransform();
           momentumRAF = requestAnimationFrame(tick);
         }
         if (Math.abs(vx) > STOP_THRESHOLD || Math.abs(vy) > STOP_THRESHOLD) {
           momentumRAF = requestAnimationFrame(tick);
         } else {
-          // No momentum — schedule auto-pan resume directly
           scheduleAutoPanResume(2500);
         }
       }
