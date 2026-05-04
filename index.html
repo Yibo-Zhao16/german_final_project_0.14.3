@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -5512,12 +5511,12 @@
     function scheduleFrakturSwap(titleEl, chars) {
       // Hold pattern per cycle:
       //   Cycle 0:  1s serif → 1s fraktur → 1s serif (snappy intro)
-      //   Cycle 1+: 4s serif → 4s fraktur → 4s serif (calm cadence)
+      //   Cycle 1+: 6s serif → 6s fraktur → 6s serif (calm cadence)
       // Each title has its own counter, so the pattern restarts when a
       // new section's title initializes.
       let cycleCount = 0;
       function currentHold() {
-        return cycleCount === 0 ? 1000 : 4000;
+        return cycleCount === 0 ? 1000 : 6000;
       }
       function nextCycle() {
         const hold = currentHold();
@@ -5568,7 +5567,7 @@
       '.cn-intro-body', '.cn-kicker', '.cn-dates', '.cn-text p',
       '.ds-tile-label', '.full-bleed .caption', '.wup-intro-caption',
       '.manifesto-label', '.manifesto-text',
-      '.closing-label', '.sig-name', '.sig-meta',
+      '.closing-label', '.closing-text', '.sig-name', '.sig-meta',
       'footer span'
     ].join(', ');
 
