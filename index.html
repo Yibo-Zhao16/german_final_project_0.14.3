@@ -386,7 +386,7 @@
     left: 0;
     right: 0;
     height: 100vh;
-    padding: 160px 40px 80px;
+    padding: 160px 40px 130px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -2563,6 +2563,152 @@
     background: var(--paper);
     padding: 32px 28px;
   }
+  /* ============ CN SUBJECT COLORS + POP EFFECT ============ */
+  /* Each ghost (Engels, Tuffi, Treppe) has its own signature color used
+     for both the inline name highlights AND the "liquid glass" pill that
+     pops behind the corresponding intro phrase when the card is reached. */
+  .cn-color--engels {
+    /* Rust-orange — 19th-century industrial / textile-mill warmth */
+    color: #c8552a;
+    font-weight: 500;
+  }
+  .cn-color--tuffi {
+    /* Warm coral pink — playful, elephant skin, circus poster */
+    color: #e76b8a;
+    font-weight: 500;
+  }
+  .cn-color--rainbow {
+    /* Rainbow gradient on the Holsteiner Treppe text — echoes the actual
+       painted stairs. Uses background-clip so the gradient fills the
+       glyphs themselves. */
+    background: linear-gradient(90deg,
+      #e34a4a 0%,
+      #e89542 16%,
+      #e8c142 32%,
+      #6abf52 48%,
+      #4a8fd9 64%,
+      #6e52c4 80%,
+      #c5479e 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+    font-weight: 600;
+  }
+  /* Inline em italics inside colored spans inherit the color */
+  .cn-color--engels em,
+  .cn-color--tuffi em { color: inherit; }
+  /* Rainbow case: em uses gradient, so we make sure inherit works */
+  .cn-color--rainbow em {
+    background: inherit;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* "Pop" target: the three intro phrases ("einen Philosophen",
+     "eine Elefantin", "eine Treppe") that bounce + glow when the
+     corresponding card scrolls into view. The glassy pill behind them
+     is built with multiple layered effects on a ::before pseudo:
+       - rounded rect with thin colored border (the "liquid glass" edge)
+       - frosty blurred fill (backdrop-filter)
+       - inner glow (box-shadow inset)
+       - outer halo (box-shadow outer) — Apple-Intelligence-ish bloom */
+  .cn-pop {
+    position: relative;
+    display: inline-block;
+    padding: 0.05em 0.25em;
+    border-radius: 0.4em;
+    transform-origin: center;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                color 0.4s ease-out;
+    z-index: 0;
+  }
+  .cn-pop::before {
+    content: "";
+    position: absolute;
+    inset: -0.05em -0.15em;
+    border-radius: 0.5em;
+    pointer-events: none;
+    z-index: -1;
+    /* Default: invisible. .is-popped activates the pill. */
+    opacity: 0;
+    transform: scale(0.92);
+    transition: opacity 0.5s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Liquid glass fill */
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.10) 50%,
+      rgba(255, 255, 255, 0.04) 100%);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+  }
+  /* When the pop fires, scale up briefly and reveal the pill. The
+     transform settles back via the spring-like cubic-bezier. */
+  .cn-pop.is-popped {
+    transform: scale(1.06);
+  }
+  .cn-pop.is-popped::before,
+  .cn-pop.is-popped-rest::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+  /* After the spring settles, the pill stays visible at rest scale.
+     A second class returns the text scale to 1 while keeping the pill. */
+  .cn-pop.is-popped-rest {
+    transform: scale(1);
+  }
+  /* Per-target color theming: text + pill border + glow.
+     Each pop variant uses a different signature color. */
+  .cn-pop[data-pop="philosoph"].is-popped,
+  .cn-pop[data-pop="philosoph"].is-popped-rest {
+    color: #c8552a;
+  }
+  .cn-pop[data-pop="philosoph"]::before {
+    border: 1px solid rgba(200, 85, 42, 0.55);
+    box-shadow:
+      inset 0 0 12px rgba(200, 85, 42, 0.12),
+      0 0 20px rgba(200, 85, 42, 0.30),
+      0 0 50px rgba(200, 85, 42, 0.18);
+  }
+  .cn-pop[data-pop="elefantin"].is-popped,
+  .cn-pop[data-pop="elefantin"].is-popped-rest {
+    color: #e76b8a;
+  }
+  .cn-pop[data-pop="elefantin"]::before {
+    border: 1px solid rgba(231, 107, 138, 0.55);
+    box-shadow:
+      inset 0 0 12px rgba(231, 107, 138, 0.12),
+      0 0 20px rgba(231, 107, 138, 0.30),
+      0 0 50px rgba(231, 107, 138, 0.18);
+  }
+  /* Rainbow variant for the Treppe pop — the text gets the gradient
+     fill. The pill matches the structure of the other two (transparent
+     fill, no opaque background that would cover the underlying text)
+     but uses a layered multi-color glow as its halo, giving a rainbow
+     bloom effect without a full gradient background. */
+  .cn-pop[data-pop="treppe"].is-popped,
+  .cn-pop[data-pop="treppe"].is-popped-rest {
+    background: linear-gradient(90deg,
+      #e34a4a, #e89542, #e8c142, #6abf52, #4a8fd9, #6e52c4, #c5479e);
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .cn-pop[data-pop="treppe"]::before {
+    /* Use a soft white-ish border tinted toward warm pink for legibility,
+       and stack multiple colored box-shadows to form the rainbow halo.
+       Each shadow contributes one band of color around the pill. */
+    border: 1px solid rgba(255, 200, 220, 0.45);
+    box-shadow:
+      inset 0 0 12px rgba(255, 255, 255, 0.10),
+      0 0 16px rgba(227, 74, 74, 0.18),    /* red */
+      0 0 22px rgba(232, 149, 66, 0.14),   /* orange */
+      0 0 30px rgba(106, 191, 82, 0.16),   /* green */
+      0 0 38px rgba(74, 143, 217, 0.16),   /* blue */
+      0 0 50px rgba(197, 71, 158, 0.18);   /* pink */
+  }
+
   /* Mobile */
   @media (max-width: 720px) {
     .city-notes { padding: 120px 20px 60px; }
@@ -2641,6 +2787,105 @@
     font-style: italic;
     color: var(--rail);
   }
+
+  /* ============ CN BODY REVEAL (Engels & Tuffi) ============
+     After the user has scrolled to the page bottom once
+     (body.cn-reveal-unlocked), the body texts of the Engels & Tuffi cards
+     gain a per-character scroll-revealed color shift: each char starts in
+     the default ink color, and as the user scrolls past it, the color
+     interpolates toward the card's accent color (rust orange for Engels,
+     coral pink for Tuffi).
+
+     Each .cn-rev-char gets its own --p (0..1) set by JS based on the
+     char's vertical position relative to a per-card scroll trigger band.
+     The per-card accent color comes from the parent .cn-rev's
+     data-rev-color attribute, mirrored into a CSS variable --rev-color. */
+  .cn-rev {
+    --rev-default: var(--ink);  /* baseline color before reveal */
+  }
+  /* When unlocked, the chars use color-mix to interpolate from default
+     (--rev-default) toward --rev-color based on per-char --p. */
+  body.cn-reveal-unlocked .cn-rev-char {
+    color: color-mix(in oklab,
+      var(--rev-default) calc((1 - var(--p, 0)) * 100%),
+      var(--rev-color) calc(var(--p, 0) * 100%));
+  }
+  /* When NOT unlocked, the spans should render exactly as if no wrapping
+     happened — inherit color cleanly from cn-text. (No-op rule, but
+     spelled out for clarity.) */
+  .cn-rev-char {
+    color: inherit;
+  }
+  /* The em italics inside cn-rev paragraphs use the rail accent already
+     (--rail / red); we leave them alone, the reveal only modulates the
+     non-em chars (we'll wrap only top-level text nodes, skipping em). */
+  /* ============ END CN BODY REVEAL ============ */
+
+  /* ============ TUFFI GLOW BARS ============
+     Soft pink atmospheric halos at the top and bottom edges of the
+     Tuffi text column. Each is built as a radial gradient inside a
+     positioned box, then softened with blur so any rectangular
+     boundary dissolves into atmosphere.
+
+     Directional behavior:
+       - Top halo bleeds UPWARD from the column top edge
+       - Bottom halo bleeds DOWNWARD from the column bottom edge
+     This means the radial gradient is anchored at the INSIDE edge of
+     each pseudo-element's box (bottom of top-bar box, top of bottom-
+     bar box), so the visible glow extends outward away from the column.
+
+     The hot core sits at the column's edge; the visible halo extends
+     ~50-60px outward. Inside the column, the glow trails off so it
+     doesn't bleed into the text. */
+  .cn-text-col--tuffi {
+    position: relative;
+    --tuffi-glow: 0;  /* JS updates this 0..1 */
+  }
+  .cn-text-col--tuffi::before,
+  .cn-text-col--tuffi::after {
+    content: "";
+    position: absolute;
+    /* Slightly wider than column so horizontal taper has room to fade. */
+    left: -10%;
+    right: -10%;
+    /* 50px tall box. The radial gradient is anchored at one of the
+       short edges and fades out across the box, so the visible glow
+       reaches ~40px outward from the column edge. */
+    height: 50px;
+    pointer-events: none;
+    /* Heavy blur dissolves any residual hard edges. */
+    filter: blur(10px);
+    opacity: var(--tuffi-glow, 0);
+    transition: opacity 0.15s linear;
+    z-index: 0;
+  }
+  /* Top halo: box sits ABOVE the column top edge. Gradient anchored at
+     the bottom of the box (which aligns with column top edge). Glow
+     bleeds UPWARD from there. */
+  .cn-text-col--tuffi::before {
+    bottom: 100%;  /* box's bottom edge sits at column's top edge */
+    background: radial-gradient(
+      ellipse 40% 100% at 50% 100%,
+      rgba(231, 107, 138, 0.85) 0%,
+      rgba(231, 107, 138, 0.55) 25%,
+      rgba(231, 107, 138, 0.20) 55%,
+      rgba(231, 107, 138, 0) 80%,
+      rgba(231, 107, 138, 0) 100%);
+  }
+  /* Bottom halo: box sits BELOW the column bottom edge. Gradient
+     anchored at the top of the box (which aligns with column bottom
+     edge). Glow bleeds DOWNWARD from there. */
+  .cn-text-col--tuffi::after {
+    top: 100%;  /* box's top edge sits at column's bottom edge */
+    background: radial-gradient(
+      ellipse 40% 100% at 50% 0%,
+      rgba(231, 107, 138, 0.85) 0%,
+      rgba(231, 107, 138, 0.55) 25%,
+      rgba(231, 107, 138, 0.20) 55%,
+      rgba(231, 107, 138, 0) 80%,
+      rgba(231, 107, 138, 0) 100%);
+  }
+  /* ============ END TUFFI GLOW BARS ============ */
 
   /* ============ DETAILS STRIP ============ */
   .details-strip {
@@ -4200,7 +4445,7 @@
         Die <em>Geister</em> der Stadt.
       </h2>
       <p class="cn-intro-body">
-        <em>„Ein Gespenst geht um in Europa — das Gespenst des Kommunismus."</em> Das hat Friedrich Engels 1848 geschrieben, mit Karl Marx, im <em>Manifest der Kommunistischen Partei</em>. Wuppertal hat aber seine eigenen Gespenster: einen Philosophen, eine Elefantin und eine Treppe.
+        <em>„Ein Gespenst geht um in Europa — das Gespenst des Kommunismus."</em> Das hat <span class="cn-color cn-color--engels">Friedrich Engels</span> 1848 geschrieben, mit Karl Marx, im <em>Manifest der Kommunistischen Partei</em>. Wuppertal hat aber seine eigenen Gespenster: <span class="cn-pop" data-pop="philosoph">einen Philosophen</span>, <span class="cn-pop" data-pop="elefantin">eine Elefantin</span> und <span class="cn-pop" data-pop="treppe">eine Treppe</span>.
       </p>
     </div>
   </div>
@@ -4217,11 +4462,11 @@
       <div class="cn-img-tag">No. 01</div>
     </div>
     <div>
-      <div class="cn-kicker">— Der Philosoph</div>
-      <h3 class="cn-name"><em>Friedrich</em> Engels</h3>
+      <div class="cn-kicker cn-kicker--engels">— Der Philosoph</div>
+      <h3 class="cn-name cn-color--engels" data-pop-trigger="philosoph"><em>Friedrich</em> Engels</h3>
       <div class="cn-dates">1820 — 1895 / Geboren hier, in Barmen</div>
-      <div class="cn-text">
-        <p>Bevor er <em>Das Kapital</em> mit Marx geschrieben hat, bevor er das moderne politische Denken verändert hat, war Friedrich Engels ein Kind in einer kleinen Textil-Stadt: Barmen. Diese Stadt ist später mit Elberfeld zusammengewachsen und wurde Wuppertal.</p>
+      <div class="cn-text cn-rev" data-rev-color="#c8552a">
+        <p>Bevor er <em>Das Kapital</em> mit Marx geschrieben hat, bevor er das moderne politische Denken verändert hat, war <span class="cn-color cn-color--engels">Friedrich Engels</span> ein Kind in einer kleinen Textil-Stadt: Barmen. Diese Stadt ist später mit Elberfeld zusammengewachsen und wurde Wuppertal.</p>
         <p>Seine Bronze-Statue steht im Engels-Park, das Licht fällt auf einen alten Mantel. In einem anderen Teil der Stadt steht eine kleinere Statue — sie blickt auf ein modernes Gebäude und dreht ihm den Rücken zu, als ob sie noch immer mit der Gegenwart streitet.</p>
       </div>
     </div>
@@ -4229,14 +4474,14 @@
 
   <!-- Tuffi — text on left, image on right -->
   <div class="cn-card">
-    <div>
+    <div class="cn-text-col cn-text-col--tuffi">
       <div class="cn-kicker">— Die Elefantin</div>
-      <h3 class="cn-name"><em>Tuffi</em>, die fliegende Elefantin</h3>
+      <h3 class="cn-name cn-color--tuffi" data-pop-trigger="elefantin"><em>Tuffi</em>, die fliegende Elefantin</h3>
       <div class="cn-dates">21. Juli 1950 / Ein sehr schlechter Tag</div>
-      <div class="cn-text">
-        <p>Im Jahr 1950 hatte ein Zirkus eine Idee: eine junge Elefantin namens Tuffi soll mit der Schwebebahn fahren — eine tolle Werbung. Tuffi war anderer Meinung. Sie hat Panik bekommen, ist durch die Wand des Wagens gebrochen und in den Fluss Wupper gefallen.</p>
+      <div class="cn-text cn-rev" data-rev-color="#e76b8a">
+        <p>Im Jahr 1950 hatte ein Zirkus eine Idee: eine junge Elefantin namens <span class="cn-color cn-color--tuffi">Tuffi</span> soll mit der Schwebebahn fahren — eine tolle Werbung. <span class="cn-color cn-color--tuffi">Tuffi</span> war anderer Meinung. Sie hat Panik bekommen, ist durch die Wand des Wagens gebrochen und in den Fluss Wupper gefallen.</p>
         <p><em>Sie hat überlebt.</em> Der Fluss war tief genug. Sie wurde eine lokale Heldin. Es gibt Wandbilder von ihr in der ganzen Stadt. Es gibt einen Joghurt-Drink, der nach ihr heißt. Es gibt keine Statue von dem Zirkusdirektor.</p>
-        <p style="opacity: 0.7;">— Die kleine Statue im Fluss zeigt die genaue Stelle, wo Tuffi gefallen ist.</p>
+        <p style="opacity: 0.7;">— Die kleine Statue im Fluss zeigt die genaue Stelle, wo <span class="cn-color cn-color--tuffi">Tuffi</span> gefallen ist.</p>
       </div>
     </div>
     <div class="cn-img">
@@ -4253,10 +4498,10 @@
     </div>
     <div>
       <div class="cn-kicker">— Die Treppe</div>
-      <h3 class="cn-name">Die <em>Holsteiner Treppe</em></h3>
+      <h3 class="cn-name cn-color--rainbow" data-pop-trigger="treppe">Die <em>Holsteiner Treppe</em></h3>
       <div class="cn-dates">2006 / „Scala" — eine Treppe der Gefühle</div>
       <div class="cn-text">
-        <p>Wuppertal hat ungefähr 500 öffentliche Treppen. Eine davon ist besonders: die Holsteiner Treppe. 112 Stufen führen den Engelsberg hinauf, von der Gathe zur Holsteiner Straße.</p>
+        <p>Wuppertal hat ungefähr 500 öffentliche Treppen. Eine davon ist besonders: die <span class="cn-color cn-color--rainbow">Holsteiner Treppe</span>. 112 Stufen führen den Engelsberg hinauf, von der Gathe zur Holsteiner Straße.</p>
         <p>Im Jahr 2006 hat der Künstler <em>Horst Gläsker</em> jede Stufe in einer anderen Farbe bemalt — und auf jeder Stufe steht ein Wort. <em>Sinn. Vertrauen. Heilen. Schuld. Leiden. Wahn. Schrecken. Hoffnung.</em> Wörter über das Menschsein, in 112 Farben.</p>
         <p>Die Treppe heißt „Scala" — eine Treppe der Gefühle. Du gehst nicht einfach hinauf. Du liest sie, Stufe für Stufe.</p>
       </div>
@@ -4807,6 +5052,309 @@
       }
       window.addEventListener('scroll', onScroll, { passive: true });
       checkBottom();
+    })();
+
+    // ================= CITY NOTES POP EFFECT =================
+    // Three "ghosts" of Wuppertal — Engels (philosoph), Tuffi (elefantin),
+    // Holsteiner Treppe (treppe) — each have a name in the intro paragraph
+    // ("einen Philosophen, eine Elefantin und eine Treppe") and a card
+    // below. When each card scrolls into view, its corresponding intro
+    // phrase pops: scales up briefly with a spring-bounce and reveals a
+    // glassy "Apple Intelligence" pill in the subject's signature color
+    // (rust/coral/rainbow). The pill stays visible after the pop settles.
+    (function setupCityNotesPop() {
+      const triggers = document.querySelectorAll('[data-pop-trigger]');
+      if (!triggers.length) return;
+      const intro = document.querySelector('.cn-intro-body');
+      if (!intro) return;
+
+      const fired = new Set();
+      const pendingFires = []; // queue of popKeys waiting for typing to finish
+
+      function actuallyFire(popKey) {
+        // The intro paragraph runs through the terminal-typing effect,
+        // which produces TWO copies of each [data-pop=...] in the DOM:
+        // one inside .term-original (display:none) and one inside .term-live
+        // (visible). We add the class to the visible one specifically.
+        // After typing completes, .term-live exists with all spans typed in.
+        const liveContainer = intro.querySelector('.term-live') || intro;
+        const popTarget = liveContainer.querySelector(`[data-pop="${popKey}"]`);
+        if (!popTarget) return false;
+        // Phase 1: scale up + reveal pill (spring bounce)
+        popTarget.classList.add('is-popped');
+        // Phase 2: after the spring peaks, settle text scale back to 1
+        // while keeping the pill. Brief "hello!" then permanent highlight.
+        setTimeout(() => {
+          popTarget.classList.remove('is-popped');
+          popTarget.classList.add('is-popped-rest');
+        }, 700);
+        return true;
+      }
+
+      function tryFire(popKey) {
+        // If intro has finished typing, fire immediately. Otherwise, queue
+        // and wait — actuallyFire requires the .term-live element to exist
+        // with the typed-in <span data-pop=...>.
+        if (intro.classList.contains('term-done')) {
+          actuallyFire(popKey);
+        } else {
+          pendingFires.push(popKey);
+        }
+      }
+
+      // Watch for term-done class to be added to the intro — when it is,
+      // flush any queued pops.
+      const mutObs = new MutationObserver(() => {
+        if (intro.classList.contains('term-done')) {
+          while (pendingFires.length > 0) {
+            actuallyFire(pendingFires.shift());
+          }
+          mutObs.disconnect();
+        }
+      });
+      mutObs.observe(intro, { attributes: true, attributeFilter: ['class'] });
+
+      const io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const popKey = entry.target.dataset.popTrigger;
+          if (fired.has(popKey)) continue;
+          fired.add(popKey);
+          tryFire(popKey);
+          io.unobserve(entry.target);
+        }
+      }, {
+        rootMargin: '0px 0px -25% 0px',
+        threshold: 0.01,
+      });
+      triggers.forEach(t => io.observe(t));
+    })();
+
+    // ================= CN BODY REVEAL (Engels & Tuffi) =================
+    // After the user scrolls to the page bottom once, body texts of the
+    // Engels and Tuffi cards in Die Geister der Stadt gain a per-character
+    // scroll-revealed color: each char interpolates from default ink
+    // toward the card's accent color (rust orange / coral pink) as the
+    // user scrolls past it.
+    //
+    // Wrapping happens LAZILY on unlock — never on first visit — so the
+    // typewriter effect is unaffected the first time through the section.
+    // Once the typewriter has finished and the user has reached page
+    // bottom, we wrap chars and bind a scroll listener for the per-char
+    // --p update.
+    //
+    // The "reveal sweep line" sits at 60% from the top of the viewport.
+    // Chars above the line are at --p=1 (full accent), below at --p=0
+    // (default), with a soft 80px transition band.
+    (function setupCnBodyReveal() {
+      const blocks = Array.from(document.querySelectorAll('.cn-rev'));
+      if (!blocks.length) {
+        console.warn('[cn-rev] no .cn-rev blocks found');
+        return;
+      }
+
+      let unlocked = false;
+      let allChars = []; // collected after wrapping: array of HTMLSpanElements
+
+      // Expose a debug entry-point so we can manually unlock from devtools
+      // if the bottom-scroll detection misses (e.g., if scroll height
+      // changes after unlock).
+      window.__forceUnlockCnReveal = function() {
+        if (!unlocked) {
+          unlocked = true;
+          unlock();
+          window.removeEventListener('scroll', onBottomScroll);
+          console.log('[cn-rev] forced unlock');
+        }
+      };
+
+      function checkBottom() {
+        if (unlocked) return;
+        const scrolledBottom = window.scrollY + window.innerHeight;
+        const fullHeight = document.documentElement.scrollHeight;
+        if (scrolledBottom >= fullHeight - 100) {
+          unlocked = true;
+          try {
+            unlock();
+          } catch (err) {
+            console.error('[cn-rev] unlock() threw:', err);
+          }
+          window.removeEventListener('scroll', onBottomScroll);
+        }
+      }
+
+      function unlock() {
+        console.log('[cn-rev] unlock() running, blocks:', blocks.length);
+        for (const block of blocks) {
+          const color = block.dataset.revColor || '#c8552a';
+          block.style.setProperty('--rev-color', color);
+          // Walk all .term-live spans (one per <p>); fall back to block
+          // itself if none found (typewriter never ran).
+          const liveSpans = block.querySelectorAll('.term-live');
+          if (liveSpans.length) {
+            console.log('[cn-rev] block has', liveSpans.length, 'term-live spans');
+            liveSpans.forEach(wrapCharsIn);
+          } else {
+            console.log('[cn-rev] block has no term-live, walking block directly');
+            wrapCharsIn(block);
+          }
+        }
+        allChars = Array.from(document.querySelectorAll('.cn-rev .cn-rev-char'));
+        console.log('[cn-rev] wrapped', allChars.length, 'chars');
+        document.body.classList.add('cn-reveal-unlocked');
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        update();
+      }
+
+      // Walk text nodes in `root`, replacing each non-whitespace character
+      // with a <span class="cn-rev-char">. Skip elements that have their
+      // own colors (em, .cn-color spans) — we don't want the reveal to
+      // override their accent styling.
+      function wrapCharsIn(root) {
+        const SKIP = ['EM', 'STRONG'];
+        const SKIP_CLASSES = ['cn-color'];
+        function shouldSkipElement(el) {
+          if (SKIP.includes(el.tagName)) return true;
+          for (const cls of SKIP_CLASSES) {
+            if (el.classList && el.classList.contains(cls)) return true;
+          }
+          // Skip the term-original (it's display:none anyway)
+          if (el.classList && el.classList.contains('term-original')) return true;
+          return false;
+        }
+        function walk(node) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.nodeValue;
+            if (!text || !text.trim()) return;
+            const frag = document.createDocumentFragment();
+            for (const ch of text) {
+              if (/\s/.test(ch)) {
+                frag.appendChild(document.createTextNode(ch));
+              } else {
+                const span = document.createElement('span');
+                span.className = 'cn-rev-char';
+                span.textContent = ch;
+                frag.appendChild(span);
+              }
+            }
+            node.parentNode.replaceChild(frag, node);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (shouldSkipElement(node)) return;
+            // Walk a snapshot of children — replaceChild during iteration
+            // would corrupt the live NodeList.
+            const kids = Array.from(node.childNodes);
+            for (const k of kids) walk(k);
+          }
+        }
+        walk(root);
+      }
+
+      // Update each char's --p based on its screen position relative to
+      // the reveal sweep line at 90% from the top of the viewport (i.e.,
+      // 10% from the bottom). The line sits where text first enters the
+      // viewport from below, so chars start transitioning immediately
+      // as they appear and complete by the time they're in the upper
+      // ~80% of the viewport. Soft band of 120px gives a smooth gradient
+      // rather than a hard reveal edge.
+      function update() {
+        if (!allChars.length) return;
+        const vh = window.innerHeight;
+        const sweepY = vh * 0.90;
+        const SOFT_PX = 120;
+        for (const ch of allChars) {
+          const r = ch.getBoundingClientRect();
+          const charY = r.top + r.height / 2;
+          // p = 1 when charY is well above sweepY; p = 0 when well below
+          let p;
+          const delta = sweepY - charY;
+          if (delta >= 0) {
+            p = 1;
+          } else if (delta >= -SOFT_PX) {
+            p = (SOFT_PX + delta) / SOFT_PX;  // 0..1 across the soft band
+          } else {
+            p = 0;
+          }
+          ch.style.setProperty('--p', p.toFixed(3));
+        }
+      }
+
+      let pending = false;
+      function onScroll() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+          pending = false;
+          update();
+        });
+      }
+      let bottomPending = false;
+      function onBottomScroll() {
+        if (bottomPending) return;
+        bottomPending = true;
+        requestAnimationFrame(() => {
+          bottomPending = false;
+          checkBottom();
+        });
+      }
+      window.addEventListener('scroll', onBottomScroll, { passive: true });
+      checkBottom();
+    })();
+
+    // ================= TUFFI GLOW BARS =================
+    // Soft pink horizontal light bars on the top and bottom edges of the
+    // Tuffi text column. The bars start invisible and fade in as the
+    // card scrolls up toward the intro paragraph; once the card's top
+    // edge "touches" the intro's bottom edge (i.e., delta <= 0), the
+    // glow locks at full brightness for the rest of the visit.
+    (function setupTuffiGlow() {
+      const card = document.querySelector('.cn-text-col--tuffi');
+      if (!card) return;
+      // The text column itself is position:sticky (it pins as the user
+      // scrolls), so its getBoundingClientRect doesn't reflect scroll
+      // progress reliably. Use the non-sticky parent .cn-card as the
+      // scroll reference instead.
+      const cardContainer = card.closest('.cn-card');
+      if (!cardContainer) return;
+
+      let pending = false;
+
+      function update() {
+        const cardRect = cardContainer.getBoundingClientRect();
+        const vh = window.innerHeight;
+        // Glow tracks scroll progress in both directions — fades in as
+        // the card scrolls up into view, fades back out if the user
+        // scrolls back up. No locking, so it reverses cleanly.
+        //   - cardTop >= vh: container below the viewport, no glow
+        //   - cardTop = vh: top edge enters from the bottom, ramp starts
+        //   - cardTop = vh - 400: container has scrolled 400px up,
+        //     glow at full
+        //   - cardTop < vh - 400: stays at full
+        const startY = vh;
+        const targetY = vh - 400;
+        const cardTop = cardRect.top;
+        let glow;
+        if (cardTop >= startY) {
+          glow = 0;
+        } else if (cardTop <= targetY) {
+          glow = 1;
+        } else {
+          glow = (startY - cardTop) / (startY - targetY);
+        }
+        card.style.setProperty('--tuffi-glow', glow.toFixed(3));
+      }
+
+      function onScroll() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+          pending = false;
+          update();
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      update();
     })();
 
     // ================= CUSTOM CURSOR =================
